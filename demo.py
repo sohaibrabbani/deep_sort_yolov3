@@ -25,6 +25,25 @@ from videocaptureasync import VideoCaptureAsync
 warnings.filterwarnings('ignore')
 
 
+def serialize_flow_data(flows, height, width, frame_count, fps, file_path):
+    # Saving the flow file as a list to make it compatible for the unfolding_viz code - Sohaib
+    flows_list = [flows[i] for i in flows.keys()]
+
+    # Saving the TrackFlowObject for the serialization - Sohaib
+    track_flow = TrackingFlowObject(height=height,
+                                    width=width,
+                                    flows=flows_list,
+                                    framecount=frame_count,
+                                    fps=fps)
+
+    # Extracting the name from the file path to save the pickle file - Sohaib
+    track_flow_pickle = open(file_path.split('/')[-1].split('.')[0] + ".pickle", "wb")
+
+    # Dumping the TrackFlowObject in a pickle file - Sohaib
+    pickle.dump(track_flow, track_flow_pickle)
+    track_flow_pickle.close()
+
+
 def main(yolo):
     # Definition of the parameters
     h = 0
@@ -100,10 +119,12 @@ def main(yolo):
             cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (255, 255, 255), 2)
             cv2.putText(frame, str(track.track_id), (int(bbox[0]), int(bbox[1])), 0, 5e-3 * 200, (0, 255, 0), 2)
 
+            # Initializing the flow list for saving the flow data of each person - Sohaib
             if track.track_id not in flows:
                 flows[track.track_id] = OrderedDict()
 
-            flows[track.track_id][frame_index+1] = np.array([int(bbox[0]), int(bbox[1])])
+            # Saving location of a person in a frame - Sohaib
+            flows[track.track_id][frame_index + 1] = np.array([int(bbox[0]), int(bbox[1])])
 
         for det in detections:
             bbox = det.to_tlbr()
@@ -126,15 +147,15 @@ def main(yolo):
         # Press Q to stop!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    flows_list = [flows[i] for i in flows.keys()]
-    track_flow = TrackingFlowObject(height=h,
-                                    width=w,
-                                    flows=flows_list,
-                                    framecount=video_capture.get(cv2.CAP_PROP_FRAME_COUNT),
-                                    fps=video_capture.get(cv2.CAP_PROP_FPS))
-    track_flow_pickle = open("dict.pickle", "wb")
-    pickle.dump(track_flow, track_flow_pickle)
-    track_flow_pickle.close()
+
+    # Calling the serialize function to save the pickle file - Sohaib
+    serialize_flow_data(flows=flows,
+                        height=h,
+                        width=w,
+                        file_path=file_path,
+                        frame_count=video_capture.get(cv2.CAP_PROP_FRAME_COUNT),
+                        fps=video_capture.get(cv2.CAP_PROP_FPS))
+
     fps_imutils.stop()
     print('imutils FPS: {}'.format(fps_imutils.fps()))
 
