@@ -27,7 +27,7 @@ warnings.filterwarnings('ignore')
 
 def serialize_flow_data(flows, height, width, frame_count, fps, file_path):
     # Saving the flow file as a list to make it compatible for the unfolding_viz code - Sohaib
-    flows_list = [flows[i] for i in flows.keys()]
+    flows_list = [flows[i] for i in flows.keys() if len(flows[i]) > 32]
 
     # Saving the TrackFlowObject for the serialization - Sohaib
     track_flow = TrackingFlowObject(height=height,
@@ -66,7 +66,7 @@ def main(yolo):
     writeVideo_flag = True
     asyncVideo_flag = False
 
-    file_path = '/home/sohaibrabbani/Downloads/overhead_people_clips/bizlobby.mp4'
+    file_path = '/home/sohaibrabbani/Downloads/overhead_people_clips/baggageclaim.mp4'
     if asyncVideo_flag:
         video_capture = VideoCaptureAsync(file_path)
     else:
@@ -113,7 +113,7 @@ def main(yolo):
         tracker.update(detections)
 
         for track in tracker.tracks:
-            if not track.is_confirmed() or track.time_since_update > 1:
+            if not track.is_confirmed() or track.time_since_update > 60:
                 continue
             bbox = track.to_tlbr()
             cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (255, 255, 255), 2)
